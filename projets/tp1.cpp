@@ -3,29 +3,25 @@
 #include "image_io.h"
 
 
-
 int main( )
 {
-#if 0
     Image image(1024, 512);
-    //~ Image image= read_image("image.bmp");
     
+    // parcours tous les pixels de l'image
     for(unsigned i= 0; i < image.size(); i++)
-        //~ image(i)= Red();
         image(i)= Color(0.5);
-        //~ image(i)= Color(0.8, 0.4, 0);
-        //~ image(i)= Color(0.8, 0.4, 0, 0.5);
-        //~ image(i)= Color(White() - image(i), 1);
-        //~ image(i)= Color(0.5, 0.5, 0.5, 0.5);
     
+    // parcours tous les pixels de l'image
+    for(int py= 0; py < image.height(); py++)
+    for(int px= 0; px < image.width(); px++)
+        // damier...
+        if((px & 8) ^ (py & 8))
+            image(px, py)= Color(1);
+    
+    // enregistre l'image, de plusieurs manieres...
     write_image_png(image, "image.png");
     write_image_bmp(image, "image.bmp");
     write_image_hdr(image, "image.hdr");
-#else
     
-    Image image= read_image("render64.hdr");
-    
-    write_image_preview(image, "preview.png");
-#endif
     return 0;
 }
