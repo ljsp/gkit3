@@ -84,11 +84,12 @@ Image tone( const Image& image, const float saturation, const float gamma )
     for(unsigned i= 0; i < image.size(); i++)
     {
         Color color= image(i);
-        color= Color(k * std::pow(color.r, invg), k * std::pow(color.g, invg), k * std::pow(color.b, invg));
-        
-        // marque les pixels pourris avec une couleur improbable...
         if(std::isnan(color.r) || std::isnan(color.g) || std::isnan(color.b))
+            // marque les pixels pourris avec une couleur improbable...            
             color= Color(1, 0, 1);
+        else
+            // sinon transformation gamma rgb -> srgb
+            color= Color(k * std::pow(color.r, invg), k * std::pow(color.g, invg), k * std::pow(color.b, invg));
         
         tmp(i)= Color(color, 1);
     }
