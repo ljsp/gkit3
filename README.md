@@ -1,2 +1,2 @@
-version minimaliste de gkit2light, sans dependancesni openGL.
+version minimaliste de gkit2light, sans dependances ni openGL.
 
