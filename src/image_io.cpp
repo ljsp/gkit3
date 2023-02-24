@@ -160,6 +160,9 @@ inline float clamp( const float x, const float min, const float max )
 
 bool write_image_png( const Image& image, const char *filename, const bool flipY )
 {
+    if(image.size() == 0)
+        return false;
+    
     std::vector<unsigned char> tmp(image.width()*image.height()*4);
     for(unsigned i= 0, offset= 0; i < image.size(); i++, offset+= 4)
     {
@@ -171,11 +174,14 @@ bool write_image_png( const Image& image, const char *filename, const bool flipY
     }
     
     stbi_flip_vertically_on_write(flipY);
-    return stbi_write_png(filename, image.width(), image.height(), 4, tmp.data(), image.width() * 4) < 0;
+    return stbi_write_png(filename, image.width(), image.height(), 4, tmp.data(), image.width() * 4) != 0;
 }
 
 bool write_image_bmp( const Image& image, const char *filename, const bool flipY )
 {
+    if(image.size() == 0)
+        return false;
+    
     std::vector<unsigned char> tmp(image.width()*image.height()*4);
     for(unsigned i= 0, offset= 0; i < image.size(); i++, offset+= 4)
     {
@@ -192,12 +198,18 @@ bool write_image_bmp( const Image& image, const char *filename, const bool flipY
 
 bool write_image_hdr( const Image& image, const char *filename, const bool flipY )
 {
+    if(image.size() == 0)
+        return false;
+    
     stbi_flip_vertically_on_write(flipY);
     return stbi_write_hdr(filename, image.width(), image.height(), 4, image.data()) != 0;
 }
 
 bool write_image_preview( const Image& image, const char *filename, const bool flipY, const float g )
 {
+    if(image.size() == 0)
+        return false;
+    
     Image tmp= tone(image, range(image), g);
     return write_image_png(tmp, filename, flipY);
 }

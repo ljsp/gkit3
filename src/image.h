@@ -33,8 +33,8 @@ public:
     \code
     Image image(512, 512);
     
-    image(10, 10)= make_red();      // le pixel (10, 10) devient rouge
-    image(0, 0)= image(10, 10);     // le pixel (0, 0) recupere la couleur du pixel (10, 10)
+    image(10, 10)= Red();               // le pixel (10, 10) devient rouge
+    image(0, 0)= image(10, 10);         // le pixel (0, 0) recupere la couleur du pixel (10, 10)
     \endcode
     */
     Color& operator() ( const int x, const int y )
@@ -48,12 +48,14 @@ public:
         return m_pixels[offset(x, y)];
     }
     
+    //! renvoie une reference sur le ieme pixel de l'image.
     Color& operator() ( const size_t offset )
     {
         assert(offset < m_pixels.size());
         return m_pixels[offset];
     }
     
+    //! renvoie lacouleur du ieme pixel de l'image.
     Color operator() ( const size_t offset ) const
     {
         assert(offset < m_pixels.size());
@@ -80,7 +82,7 @@ public:
         return sample(x * m_width, y * m_height);
     }
     
-    //! renvoie un pointeur sur le stockage des couleurs des pixels.
+    //! renvoie un const pointeur sur le stockage des couleurs des pixels.
     const float *data( ) const
     {
         assert(!m_pixels.empty());
@@ -99,10 +101,11 @@ public:
     //! renvoie la hauteur de l'image.
     int height( ) const { return m_height; }
     //! renvoie le nombre de pixels de l'image.
-    std::size_t size( ) const { return m_width * m_height; }
+    unsigned size( ) const { return m_width * m_height; }
     
-    //! renvoie l'indice du pixel.
-    unsigned int offset (const int x, const int y ) const
+    //! renvoie l'indice du pixel (x, y) [0 .. width]x[0 .. height].
+    //! renvoie le pixel le plus proche si (x, y) est en dehors de l'image...
+    unsigned offset( const int x, const int y ) const
     {
         int px= x;
         if(px < 0) px= 0;
@@ -111,8 +114,9 @@ public:
         if(py < 0) py= 0;
         if(py > m_height-1) py= m_height-1;
         
-        assert(py * m_width + px < int(m_pixels.size()));
-        return py * m_width + px;
+        unsigned p= py * m_width + px;
+        assert(p < m_pixels.size());
+        return p;
     }
 };
 
