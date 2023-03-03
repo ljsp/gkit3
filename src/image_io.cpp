@@ -159,6 +159,7 @@ inline float clamp( const float x, const float min, const float max )
     else return x;
 }
 
+
 bool write_image_png( const Image& image, const char *filename, const bool flipY )
 {
     if(image.size() == 0)
@@ -176,6 +177,11 @@ bool write_image_png( const Image& image, const char *filename, const bool flipY
     
     stbi_flip_vertically_on_write(flipY);
     return stbi_write_png(filename, image.width(), image.height(), 4, tmp.data(), image.width() * 4) != 0;
+}
+
+bool write_image( const Image& image, const char *filename, const bool flipY )
+{
+    return write_image_png(image, filename, flipY );
 }
 
 bool write_image_bmp( const Image& image, const char *filename, const bool flipY )

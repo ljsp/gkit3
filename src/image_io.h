@@ -12,6 +12,8 @@
 Image read_image( const char *filename, const bool flipY= true );
 
 //! enregistre une image au format .png
+bool write_image( const Image& image, const char *filename, const bool flipY= true );
+//! enregistre une image au format .png
 bool write_image_png( const Image& image, const char *filename, const bool flipY= true );
 //! enregistre une image au format .bmp
 bool write_image_bmp( const Image& image, const char *filename, const bool flipY= true );
