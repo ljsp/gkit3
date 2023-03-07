@@ -27,4 +27,6 @@ std::string normalize_filename( const std::string& filename );
 */
 std::string relative_filename( const std::string& filename, const std::string& path );
 
+std::string absolute_filename( const std::string& path, const std::string& filename );
+
 #endif

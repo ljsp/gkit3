@@ -108,8 +108,17 @@ std::string normalize_filename( const std::string& filename )
 std::string relative_filename( const std::string& filename, const std::string& path )
 {
     unsigned i= 0;
-    while(filename[i] && path[i] && filename[i] == path[i]) 
+    while(i< filename.length() && i < path.length() && filename[i] == path[i]) 
         i++;
     
     return filename.substr(i);
+}
+
+
+std::string absolute_filename( const std::string& path, const std::string& filename )
+{
+    if(filename[0] == '.' || filename[0] == '/')
+        return normalize_filename(filename);
+    else
+        return normalize_filename(path + filename);
 }

@@ -18,15 +18,17 @@ struct Material
     Color specular;             //!< couleur du reflet.
     Color emission;             //!< pour une source de lumiere.
     float ns;                   //!< concentration des reflets, exposant pour les reflets blinn-phong.
+    float ni;                   //!< indice de refraction, cf coefficients de Fresnel.
+    Color transmission;         //!< transmission, "couleur" des objets transparents.
+    
     int diffuse_texture;        //!< indice de la texture de la couleur de base, ou -1.
     int specular_texture;        //!< indice de la texture, ou -1.
-    int emission_texture;        //!< indice de la texture, ou -1.
-    int ns_texture;             //!< indice de la texture de reflet, ou -1.
+    int ns_texture;        //!< indice de la texture, ou -1.
     
     //! constructeur par defaut. noir.
-    Material( ) : diffuse(), specular(), emission(), ns(0), diffuse_texture(-1), specular_texture(-1), emission_texture(-1), ns_texture(-1) {}
+    Material( ) : diffuse(), specular(), emission(), ns(0), ni(0), transmission(), diffuse_texture(-1), specular_texture(-1), ns_texture(-1) {}
     //! matiere diffuse.
-    Material( const Color& color ) : diffuse(color), specular(), emission(), ns(0), diffuse_texture(-1), specular_texture(-1), emission_texture(-1), ns_texture(-1) {}
+    Material( const Color& color ) : diffuse(color), specular(), emission(), ns(0), ni(0), transmission(), diffuse_texture(-1), specular_texture(-1), ns_texture(-1) {}
 };
 
 
@@ -35,11 +37,10 @@ struct Material
     `names[id]` est le nom de la matiere `materials[id]`, utiliser name() et material() pour recuperer la description d'une matiere d'indice `id`.
 
     les textures sont indexees separemment. chaque matiere reference une ou plusieurs textures, par exemple diffuse_texture et specular_texture. 
-    ces indices correspondent aux noms de fichiers (uniques) des images à charger : filename() renvoie le nom du fichier.
-    filename( material.diffuse_texture ) renvoie le nom de l'image à charger qui correspond à la texture diffuse de la matiere.
+    ces indices correspondent aux noms de fichiers (uniques) des images a charger : filename() renvoie le nom du fichier.
+    filename( material.diffuse_texture ) renvoie le nom de l'image a charger qui correspond a la texture diffuse de la matiere.
     
     pourquoi cette indexation supplementaire ? pour eviter de charger plusieurs fois une image / creer plusieurs fois une texture. 
-    il est aussi tres simple de creer un tableau avec les textures openGL indexe de la meme maniere.
 */
 struct Materials
 {
@@ -137,8 +138,8 @@ struct Materials
     
     //! renvoie le nombre de noms de fichiers de textures.
     int filename_count( ) const { return int(texture_filenames.size()); }
-    //! renvoie le nombre de noms de fichiers de textures.
-    const char *filename( const int id ) const { return texture_filenames[id].c_str(); }
+    //! renvoie le nom de fichier d'une texture.
+    const char *filename( const int id ) const { if(id < 0) return nullptr; assert(id < int(texture_filenames.size())); return texture_filenames[id].c_str(); }
     
     //! renvoie l'indice d'une texture, si elle existe.
     int find_texture( const char *filename )
