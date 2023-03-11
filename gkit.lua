@@ -39,6 +39,9 @@ solution "gKit3"
     
 if _PREMAKE_VERSION >="5.0" then
     configuration { "windows" }
+        location "build"
+        debugdir "."
+        
         defines { "WIN32", "_USE_MATH_DEFINES", "_CRT_SECURE_NO_WARNINGS" }
         defines { "NOMINMAX" } -- allow std::min() and std::max() in vc++ :(((
 
