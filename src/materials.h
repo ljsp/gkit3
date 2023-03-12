@@ -51,6 +51,14 @@ struct Materials
     
     Materials( ) : names(), materials(), texture_filenames(), default_material_id(-1) {}
     
+    void clear( ) 
+    {
+        names.clear();
+        materials.clear();
+        texture_filenames.clear();
+        default_material_id= -1;
+    }
+    
     //! ajoute une matiere.
     int insert( const Material& material, const char *name )
     {

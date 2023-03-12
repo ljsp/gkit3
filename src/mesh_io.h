@@ -154,21 +154,39 @@ exemple :
 bool read_images( const Materials& materials, std::vector<Image>& images );
 
 
-/*! \todo charge tous les attributs et les matieres.
-struct Mesh
+struct MeshIOData
 {
     std::vector<Point> positions;
-    std::vector<Vector> texcoords;
+    std::vector<Point> texcoords;
     std::vector<Vector> normals;
     std::vector<int> indices;
     std::vector<int> material_indices;
     
     Materials materials;
-    //~ std::vector<Image> images;  ??
+    std::vector<Image> images;
 };
 
-MeshData read_mesh( const char *filename );
+/*! charge tous les attributs et les matieres. en une seule fois.
+equivalent a :
+    const char *filename= "...";
+    
+    std::vector<Point> positions;
+    std::vector<int> indices;
+    read_indexed_positions( filename, positions, indices );
+
+    Materials materials;
+    std::vector<int> material_indices;
+    read_materials( filename, materials, materials_indices );
+
+    std::vector<Image> images;
+    read_images( filename, images );
+
+    mais toutes les infos chargees sont stockees dans une seule structure, cf MeshIOData, plus simple a manipuler.
 */
+MeshIOData read_meshio_data( const char *filename );
+
+//! charge les images referencees par les matieres de l'objet.
+bool read_images( MeshIOData& data );
 
 ///@}
 

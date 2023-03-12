@@ -107,7 +107,10 @@ Image read_image( const char *filename, const bool flipY )
         int width, height, channels;
         unsigned char *data= stbi_load(filename, &width, &height, &channels, 4);
         if(!data)
+        {
+            printf("[error] loading '%s'...\n", filename);
             return {};
+        }
         
         Image image(width, height);
         for(unsigned i= 0, offset= 0; i < image.size(); i++, offset+= 4)
@@ -132,7 +135,10 @@ Image read_image( const char *filename, const bool flipY )
         int width, height, channels;
         float *data= stbi_loadf(filename, &width, &height, &channels, 4);
         if(!data)
+        {
+            printf("[error] loading '%s'...\n", filename);
             return {};
+        }
         
         Image image(width, height);
         for(unsigned i= 0, offset= 0; i < image.size(); i++, offset+= 4)
