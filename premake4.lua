@@ -4,6 +4,9 @@ dofile "gkit.lua"
 projects = {
 	"tp1",
 	"tp2",
+    "tp2_ex1",
+    "tp2_ex2",
+    "tp2_ex3"
 }
 
 for i, name in ipairs(projects) do
