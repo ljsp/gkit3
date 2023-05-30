@@ -7,6 +7,54 @@
 #include <vec.h>
 #include <array>
 
+const float inf = std::numeric_limits<float>::infinity();
+
+struct Triangle {
+    Point a;
+    Point b;
+    Point c;
+    Color color;
+};
+
+struct Light
+{
+    Point p;
+    Color color;
+};
+
+struct Hit
+{
+    float t;
+    Vector n;
+    Color color;
+
+    operator bool() { return t >= 0 && t < inf; } // renvoie vrai si l'intersection existe et quelle est valide...
+};
+
+Hit intersect(const Point& o, const Vector& d, const Triangle triangle) {
+    
+    // Normale
+    Vector n = cross(Vector(triangle.a, triangle.b), Vector(triangle.a, triangle.c));
+
+    // Intersection avec le rayon o , d
+    float t = dot(n, Vector(o, triangle.a)) / dot(n, d);
+
+    // point d'intersection
+    Point p = o + t * d;
+
+    // l'intersection n'est pas valide / derriere l'origine du rayon
+    if ((dot(n, cross(Vector(triangle.a, triangle.b), Vector(triangle.a, p))) < 0)
+        || (dot(n, cross(Vector(triangle.b, triangle.c), Vector(triangle.b, p))) < 0)
+        || (dot(n, cross(Vector(triangle.c, triangle.a), Vector(triangle.c, p))) < 0)
+        ) {
+        return { INFINITY, Vector(), triangle.color };
+    }
+
+    return { t, normalize(n), triangle.color };
+    
+}
+                                                   
+
 void movePositions(std::vector<Point>& positions, Vector& direction) {
     for (unsigned i = 0; i < positions.size(); i++) {
 		positions[i] = positions[i] + direction;
@@ -22,18 +70,6 @@ void getBoundingBox(const std::vector<Point>& positions, Point& pmin, Point& pma
 	}
 }
 
-bool isFaceCulled(std::array<Point, 3> currentTriangle, Point origin) {
-	
-    Vector edge1 = currentTriangle[1] - currentTriangle[0];
-	Vector edge2 = currentTriangle[2] - currentTriangle[0];
-	Vector triangleNormal = cross(edge1, edge2);
-
-	if (dot(triangleNormal, origin - currentTriangle[0]) < 0) {
-		return true;
-	}
-	return false;
-}
-
 bool isRayInTriangle(std::array<Vector, 3>& currentTriangleNormals, Vector& rayDirection) {
     
     std::array<float, 3> dotProducts;
@@ -44,43 +80,61 @@ bool isRayInTriangle(std::array<Vector, 3>& currentTriangleNormals, Vector& rayD
     return (dotProducts[0] >= 0) && (dotProducts[1] >= 0) && (dotProducts[2] >= 0);
 }
 
-void drawTriangles(Image& image, const MeshIOData& data) {
+void render(Image& image, const MeshIOData& data) {
     
-    std::array<Point, 3> currentTriangle;
-    std::array<Vector, 3> currentTriangleNormals;
-    std::array<float, 3> dotProducts, lambdas;
     Point origin(0, 0, 0);
+    Light light = { Point(0, 0, 0), Color(0.1f,0.1f,0.2f,1.0f) };
+    Triangle triangle;
+    Color color;
+    Point a, b, c;
+
+    for (int py = 0; py < image.height(); py++) {
+        for (int px = 0; px < image.width(); px++) {
+            
+            float x = (static_cast<float>(px) / image.width()) * 2 - 1;
+            float y = (static_cast<float>(py) / image.height()) * 2 - 1;
+            float z = -1;
+            
+            Point rayOrigin = Point(x, y, z);
+            Vector rayDirection = Vector(origin, rayOrigin);
+
+            float t = inf;
+
+            for (unsigned i = 0; i + 2 < data.indices.size(); i += 3) {
     
-    // parcours tous les triangles
-    for (unsigned i = 0; i + 2 < data.indices.size(); i += 3)
-    {
-        currentTriangle[0] = data.positions[data.indices[i + 0]];
-        currentTriangle[1] = data.positions[data.indices[i + 1]];
-        currentTriangle[2] = data.positions[data.indices[i + 2]];
+                a = data.positions[data.indices[i + 0]];
+                b = data.positions[data.indices[i + 1]];
+                c = data.positions[data.indices[i + 2]];
+                color = data.materials.materials[data.material_indices[i / 3]].diffuse;
 
-		if (isFaceCulled(currentTriangle, origin)) {
-            continue;
-		}
+                triangle = { a, b, c, color };
 
-        for (int i = 0; i < 3; i++) {
-            currentTriangleNormals[i] = normalize(cross(currentTriangle[(i + 2) % 3] - origin, currentTriangle[(i + 1) % 3] - currentTriangle[(i + 2) % 3]));
-        }
+                Hit hit = intersect(rayOrigin, rayDirection, triangle);
 
-        for (int py = 0; py < image.height(); py++) {
-            for (int px = 0; px < image.width(); px++) {
-                float x = (static_cast<float>(px) / image.width()) * 2 - 1;
-                float y = (static_cast<float>(py) / image.height()) * 2 - 1;
-                float z = -1;
-                Point rayOrigin = Point(x, y, z);
-                Vector rayDirection = normalize(Vector(origin, rayOrigin));
+			    if (hit && hit.t < t) {
 
-				if (isRayInTriangle(currentTriangleNormals, rayDirection)) {
-                    Color color = data.materials.materials[data.material_indices[i / 3]].diffuse;
-                    image(px, py) = color;
+                    t = hit.t;
+
+                    Point p = rayOrigin + hit.t * rayDirection;
+                    p = p + hit.n * 0.001; // on décale d'un epsilon
+                    Color pixel = Color(0, 0, 0);
+
+                    Vector l = Vector(p, light.p);
+
+                    float cos_theta = std::max(float(0), dot(normalize(hit.n), normalize(l)));
+
+                    Hit i = intersect(p, l, triangle);
+
+                    if (!i || (i.t > 1)) {  // Vérifier ombre
+                        pixel = pixel + (light.color * hit.color * cos_theta);
+                    }
+
+                    image(px, py) = Color(pixel, 1);
                 }
+                
             }
-        }
 
+        }
     }
 }
 
@@ -90,11 +144,11 @@ Image load_mesh(const char* filename) {
     Point pmin, pmax;
 	MeshIOData data = read_meshio_data(filename);
     
-    movePositions(data.positions, Vector(-300, -300, -800));
+    movePositions(data.positions, Vector(0, -300, -600));
     //movePositions(data.positions, Vector(0, -2, -8));
     getBoundingBox(data.positions, pmin, pmax);
     
-    drawTriangles(image, data);
+    render(image, data);
 
     printf("%d triangles\n", int(data.positions.size() / 3));
     printf("bounds [%f %f %f]x[%f %f %f]\n", pmin.x, pmin.y, pmin.z, pmax.x, pmax.y, pmax.z);
