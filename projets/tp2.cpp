@@ -7,8 +7,6 @@
 #include <vec.h>
 #include <array>
 
-const float inf = std::numeric_limits<float>::infinity();
-
 struct Triangle {
     Point a;
     Point b;
@@ -28,7 +26,7 @@ struct Hit
     Vector n;
     Color color;
 
-    operator bool() { return t >= 0 && t < inf; } // renvoie vrai si l'intersection existe et quelle est valide...
+    operator bool() { return t >= 0 && t < INFINITY; } // renvoie vrai si l'intersection existe et quelle est valide...
 };
 
 Hit intersect(const Point& o, const Vector& d, const Triangle triangle) {
@@ -61,6 +59,13 @@ void movePositions(std::vector<Point>& positions, Vector& direction) {
 	}
 }
 
+void rotatePositionsY(std::vector<Point>& positions, const float angle) {
+    for (unsigned i = 0; i < positions.size(); i++) {
+        Transform rot = RotationY(angle);
+        positions[i] = rot(positions[i]);
+    }
+}
+
 void getBoundingBox(const std::vector<Point>& positions, Point& pmin, Point& pmax) {
 	pmin = positions[0];
 	pmax = positions[0];
@@ -83,10 +88,14 @@ bool isRayInTriangle(std::array<Vector, 3>& currentTriangleNormals, Vector& rayD
 void render(Image& image, const MeshIOData& data) {
     
     Point origin(0, 0, 0);
-    Light light = { Point(0, 0, 0), Color(0.1f,0.1f,0.2f,1.0f) };
+    Light light = { Point(400.0, 315.0, -400.0), Color(0.9f,0.9f,0.9f,1.0f) };
     Triangle triangle;
-    Color color;
+    Color materialColor;
     Point a, b, c;
+
+    Triangle triangle2;
+    Color materialColor2;
+    Point a2, b2, c2;
 
     for (int py = 0; py < image.height(); py++) {
         for (int px = 0; px < image.width(); px++) {
@@ -98,16 +107,16 @@ void render(Image& image, const MeshIOData& data) {
             Point rayOrigin = Point(x, y, z);
             Vector rayDirection = Vector(origin, rayOrigin);
 
-            float t = inf;
+            float t = INFINITY;
 
             for (unsigned i = 0; i + 2 < data.indices.size(); i += 3) {
     
                 a = data.positions[data.indices[i + 0]];
                 b = data.positions[data.indices[i + 1]];
                 c = data.positions[data.indices[i + 2]];
-                color = data.materials.materials[data.material_indices[i / 3]].diffuse;
+                materialColor = data.materials.materials[data.material_indices[i / 3]].diffuse;
 
-                triangle = { a, b, c, color };
+                triangle = { a, b, c, materialColor };
 
                 Hit hit = intersect(rayOrigin, rayDirection, triangle);
 
@@ -115,18 +124,29 @@ void render(Image& image, const MeshIOData& data) {
 
                     t = hit.t;
 
-                    Point p = rayOrigin + hit.t * rayDirection;
-                    p = p + hit.n * 0.001; // on décale d'un epsilon
-                    Color pixel = Color(0, 0, 0);
+                    Point intersectingPoint = rayOrigin + hit.t * rayDirection;
+                    intersectingPoint = intersectingPoint + hit.n * 0.001; // on décale d'un epsilon
 
-                    Vector l = Vector(p, light.p);
+                    Vector lightDirection = Vector(intersectingPoint, light.p);
 
-                    float cos_theta = std::max(float(0), dot(normalize(hit.n), normalize(l)));
+                    float cos_theta = dot(normalize(hit.n), normalize(lightDirection));
+                    
+                    Color pixel = light.color * hit.color * cos_theta;
 
-                    Hit i = intersect(p, l, triangle);
+                    for (unsigned i = 0; i + 2 < data.indices.size(); i += 3) {
 
-                    if (!i || (i.t > 1)) {  // Vérifier ombre
-                        pixel = pixel + (light.color * hit.color * cos_theta);
+                        a2 = data.positions[data.indices[i + 0]];
+                        b2 = data.positions[data.indices[i + 1]];
+                        c2 = data.positions[data.indices[i + 2]];
+                        materialColor2 = data.materials.materials[data.material_indices[i / 3]].diffuse;
+
+                        triangle2 = { a2, b2, c2, materialColor2 };
+
+                        Hit shadowRay = intersect(intersectingPoint, lightDirection, triangle2);
+
+                        if (shadowRay) {  // Vérifier ombre
+                            pixel = Black();
+                        }
                     }
 
                     image(px, py) = Color(pixel, 1);
@@ -144,8 +164,9 @@ Image load_mesh(const char* filename) {
     Point pmin, pmax;
 	MeshIOData data = read_meshio_data(filename);
     
-    movePositions(data.positions, Vector(0, -300, -600));
-    //movePositions(data.positions, Vector(0, -2, -8));
+    //movePositions(data.positions, Vector(0, -200, -600));
+    movePositions(data.positions, Vector(0, -2, -8));
+    //rotatePositionsY(data.positions, 10);
     getBoundingBox(data.positions, pmin, pmax);
     
     render(image, data);
@@ -159,7 +180,7 @@ Image load_mesh(const char* filename) {
 
 int main() {
     
-    Image image = load_mesh("data/geometry.obj");
-    write_image(image, "image_Scene.png"); // par defaut en .png
+    Image image = load_mesh("data/robot.obj");
+    write_image(image, "image_Robot.png"); // par defaut en .png
     return 0;
 }
